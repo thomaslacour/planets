@@ -8,12 +8,12 @@ class Scrapper:
     """Scrapper class mold for scrapping
     """
 
-    def __init__(self, url:str ):
+    def __init__(self, url:str):
         self.url=url
         self.data=None
 
 
-    def get_soup(self, url:str):
+    def get_soup(self, url:str) -> bs4.BeautifulSoup:
         """Get soup from an url
         """
         resp = requests.get(url)
