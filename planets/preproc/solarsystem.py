@@ -106,6 +106,10 @@ class SolarSys:
         df['pl_rade_assym'] = df['pl_rade_assym'].apply(self._clean_pl_rade_assym)
         df['pl_masse [sun]'] = df['pl_masse [sun]'].apply(self._clean_pl_mass_sun)
 
+        df.loc[:3, 'Body'] = 'Terrestrial'
+        df.iloc[4:-1, -1]  = 'Gas Giant'
+        df.iloc[-1, -1]  = 'Dwarf'
+
         return df
 
 
