@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 RAW_DATA_PATH = '../raw_data/nasa_PS_2021.11.23_14.10.10.csv'
 COLS_MAPPER_PATH = '../raw_data/nasa_Exoplanet_Archive_Column_Mapping.csv'
@@ -7,8 +8,9 @@ class Nasa:
 
     def __init__(self):
 
-        self.col_dict = self.get_readable_column_names()
+        self.col_dict = self.load_readable_column_names()
         self.col_blocks = self.get_column_blocks()
+        self.relev_cols = self.get_relevant_columns()
         self.pl_name_index = None
 
     def load_raw_data(self):
@@ -23,23 +25,24 @@ class Nasa:
 
     def get_relevant_columns(self) -> dict:
 
-        # filter out unc cols
-        relev_cols = [_ for _ in self.col_dict.values() if 'er Unc' not in str(_)]
+        # filter out 'unc', 'err', 'lim' cols
+        relev_cols = [
+            _ for _ in self.col_dict.keys() if 'err' not in str(_) and str(_).endswith('lim') is False
+            ]
 
         # get keys for convert_table
         convert_table = {}
         for key,val in self.col_dict.items():
-            if val in relev_cols:
+            if key in relev_cols:
                 # !!! keys have spaces and are not always str type !!!
                 convert_table[str(key).strip()] = val
 
         del convert_table['nan']
         del convert_table['pl_orbtper_systemref']
-        # print(convert_table)
 
         return convert_table
 
-    def get_readable_column_names(self) -> dict:
+    def load_readable_column_names(self) -> dict:
 
         """Gets readable column names from nase column mapping.
         Returns a dict with key, value as db_col_name, readable name"""
@@ -75,10 +78,31 @@ class Nasa:
 
         return blocks_list
 
+    def get_column_blocks2(self, prefix_marker='pl_'):
+
+        """
+        Gets blocks of data about, Planetary Parameter Reference,
+        Stellar Parameter Reference, System Parameter Reference,
+        Planetary Parameter Reference Publication Date by splitting the original
+        set of columns.
+        """
+        blocks_list = []
+        for col_name in self.relev_cols.keys():
+            if prefix_marker in str(col_name).lower():
+                blocks_list.append(col_name)
+
+        return blocks_list
+
     def get_columns_from_blocks(self, block='Planetary Parameter Reference'):
 
         """
         Gets list of columns from a given block. Mostly used for filtering.
+        Blocks are:
+        - Planetary Parameter Reference
+        - Stellar Parameter Reference
+        - System Parameter Reference
+        - Planetary Parameter Reference Publication Date
+
         """
 
         # get db_col_names from blocks
@@ -92,7 +116,17 @@ class Nasa:
         return corr_keys
 
     def aggregate_rows_on_pl_name(self, df):
-        return df.groupby('pl_name').agg(lambda x: x.tolist())
+        return df.groupby('pl_name').agg(self._aggregate_func)
+
+    def _aggregate_func(self, x):
+
+        x = x.dropna()
+        if len(x) == 0:
+            return np.nan
+        elif len(x.unique()) == 1:
+            return x.unique()[0]
+        else:
+            return list(x.unique())
 
     def load_clean_data(self):
 
