@@ -9,11 +9,86 @@ class Nasa:
     def __init__(self):
 
         self.col_dict = self.load_readable_column_names()
-        self.col_blocks = self.get_column_blocks()
-        self.relev_cols = self.get_relevant_columns()
-        self.pl_name_index = None
+        self.coarse_relev_cols = self.get_coarse_relevant_columns()
+        # self.col_blocks = self.get_column_blocks()
 
-    def load_raw_data(self):
+        self.pl_name_index = None
+        self.NOT_RELEV_COLS = {
+            'hd_name': 'HD ID',
+            'hip_name': 'HIP ID',
+            'tic_id': 'TIC ID',
+            'gaia_id': 'GAIA ID',
+            'disc_refname': 'Discovery Reference',
+            'disc_pubdate': 'Discovery Publication Date',
+            'disc_locale': 'Discovery Locale',
+            'disc_facility': 'Discovery Facility',
+            'disc_telescope': 'Discovery Telescope',
+            'disc_instrument': 'Discovery Instrument',
+            'soltype': 'Solution Type',
+            'pl_masse': 'Planet Mass [Earth Mass]',
+            'pl_massj': 'Planet Mass [Jupiter Mass]',
+            'pl_msinie': 'Planet Mass*sin(i) [Earth Mass]',
+            'pl_msinij': 'Planet Mass*sin(i) [Jupiter Mass]',
+            'pl_cmasse': 'Planet Mass*sin(i)/sin(i) [Earth Mass]',
+            'pl_cmassj': 'Planet Mass*sin(i)/sin(i) [Jupiter Mass]',
+            'pl_bmassprov': 'Planet Mass or Mass*sin(i) Provenance',
+            'pl_imppar': 'Impact Parameter',
+            'pl_ratdor': 'Ratio of Semi-Major Axis to Stellar Radius',
+            'pl_occdep': 'Occultation Depth [%]',
+            'pl_orbtper': 'Epoch of Periastron [days]',
+            'pl_orblper': 'Argument of Periastron [deg]',
+            'pl_rvamp': 'Radial Velocity Amplitude [m/s]',
+            'rastr': 'RA [sexagesimal]',
+            'ra': 'RA [decimal]',
+            'glat': 'Galactic Latitude [deg]',
+            'glon': 'Galactic Longitude [deg]',
+            'elat': 'Ecliptic Latitude [deg]',
+            'elon': 'Ecliptic Longitude [deg]',
+            'sy_pm': 'Total Proper Motion [mas/yr]',
+            'sy_pmra': 'Proper Motion (RA) [mas/yr]',
+            'sy_pmdec': 'Proper Motion (Dec) [mas/yr]',
+            'sy_plx': 'Parallax [mas]',
+            'sy_bmag': 'B (Johnson) Magnitude',
+            'sy_vmag': 'V (Johnson) Magnitude',
+            'sy_jmag': 'J (2MASS) Magnitude',
+            'sy_hmag': 'H (2MASS) Magnitude',
+            'sy_kmag': 'Ks (2MASS) Magnitude',
+            'sy_umag': 'u (Sloan) Magnitude',
+            'sy_gmag': 'g (Sloan) Magnitude',
+            'sy_rmag': 'r (Sloan) Magnitude',
+            'sy_imag': 'i (Sloan) Magnitude',
+            'sy_zmag': 'z (Sloan) Magnitude',
+            'sy_w1mag': 'W1 (WISE) Magnitude',
+            'sy_w2mag': 'W2 (WISE) Magnitude',
+            'sy_w3mag': 'W3 (WISE) Magnitude',
+            'sy_w4mag': 'W4 (WISE) Magnitude',
+            'sy_gaiamag': 'Gaia Magnitude',
+            'sy_icmag': 'I (Cousins) Magnitude',
+            'sy_tmag': 'TESS Magnitude',
+            'sy_kepmag': 'Kepler Magnitude',
+            'rowupdate': 'Date of Last Update',
+            'pl_pubdate': 'Planetary Parameter Reference Publication Date',
+            'releasedate': 'Release Date',
+            'pl_nnotes': 'Number of Notes',
+            'st_nphot': 'Number of Photometry Time Series',
+            'st_nrvc': 'Number of Radial Velocity Time Series',
+            'st_nspec': 'Number of Stellar Spectra Measurements',
+            'pl_nespec': 'Number of Emission Spectroscopy Measurements',
+            'pl_ntranspec': 'Number of Transmission Spectroscopy Measurements',
+            'pl_tsystemref': 'Time Reference Frame and Standard',
+            'sy_refname': 'System Parameter Reference',
+            'pl_refname': 'Planetary Parameter Reference',
+            'pl_letter': 'Planet Letter',
+            'st_refname': 'Stellar Parameter Reference',
+            'pl_projobliq': 'Projected Obliquity [deg]',
+            'pl_trueobliq': 'True Obliquity [deg]',
+            'st_spectype': 'Spectral Type',
+            'st_vsin': 'Stellar Rotational Velocity [km/s]',
+            'st_rotp': 'Stellar Rotational Period [days]',
+            'st_radv': 'Systemic Radial Velocity [km/s]'
+        }
+
+    def _load_raw_data(self):
 
         df_planets = pd.read_csv(
         RAW_DATA_PATH,
@@ -23,11 +98,15 @@ class Nasa:
 
         return df_planets
 
-    def get_relevant_columns(self) -> dict:
+    def get_coarse_relevant_columns(self) -> dict:
 
         # filter out 'unc', 'err', 'lim' cols
         relev_cols = [
-            _ for _ in self.col_dict.keys() if 'err' not in str(_) and str(_).endswith('lim') is False
+            _ for _ in self.col_dict.keys()
+            if 'err' not in str(_)
+            and str(_).endswith('lim') is False
+            and str(_).endswith('_flag') is False
+            and str(_).startswith('disc_') is False
             ]
 
         # get keys for convert_table
@@ -44,8 +123,11 @@ class Nasa:
 
     def load_readable_column_names(self) -> dict:
 
-        """Gets readable column names from nase column mapping.
-        Returns a dict with key, value as db_col_name, readable name"""
+        """
+        Gets readable column names from nase column mapping.
+        Returns a dict with key, value as db_col_name, readable name. Usable for
+        mapping in pandas.
+        """
 
         # get readable columns names for filtering
         columns = pd.read_csv(COLS_MAPPER_PATH)
@@ -58,27 +140,16 @@ class Nasa:
 
         return columns.to_dict().get('complete_name')
 
-    def get_column_blocks(self):
+    def get_readable_column_names(self, cols:list) -> dict:
 
-        """
-        Gets blocks of data about, Planetary Parameter Reference,
-        Stellar Parameter Reference, System Parameter Reference,
-        Planetary Parameter Reference Publication Date by splitting the original
-        set of columns.
-        """
+        dict_readable_cols = {}
+        for col in cols:
+            if col in self.col_dict.keys():
+                dict_readable_cols[col] = self.col_dict[col]
 
-        # get blocks of datas
-        marker = 'parameter reference'
-        prev_idx = 0
-        blocks_list = {}
-        for i, col_name in enumerate(self.col_dict.values()):
-            if marker in str(col_name).lower():
-                blocks_list[col_name] = list(self.col_dict.values())[prev_idx:i]
-                prev_idx = i
+        return dict_readable_cols
 
-        return blocks_list
-
-    def get_column_blocks2(self, prefix_marker='pl_'):
+    def get_column_blocks(self, prefix_marker='pl_'):
 
         """
         Gets blocks of data about, Planetary Parameter Reference,
@@ -115,7 +186,13 @@ class Nasa:
 
         return corr_keys
 
-    def aggregate_rows_on_pl_name(self, df):
+    def _aggregate_rows_on_pl_name(self, df):
+
+        """
+        Aggregates rows about the same planet. Sets NaN if not values, keeps,
+        the only value if single, keeps all values if mutliple.
+        """
+
         return df.groupby('pl_name').agg(self._aggregate_func)
 
     def _aggregate_func(self, x):
@@ -128,15 +205,26 @@ class Nasa:
         else:
             return list(x.unique())
 
-    def load_clean_data(self):
+    def load_clean_data(self, filt='coarse'):
+
+        """
+        Loads a dataset without obviously redundant columns such as
+        ('err', 'lim', 'flag').
+        User may use 'self.NOT_RELEV_COLS' for better filtering.
+        """
 
         # load raw data
-        df = self.load_raw_data()
+        df = self._load_raw_data()
 
         # filter on relevant columns
-        df = df[list(self.get_relevant_columns().keys())]
+        if filt == 'coarse':
+            df = df[list(self.coarse_relev_cols.keys())]
+        elif filt == 'relevant':
+            df = df[list(self.coarse_relev_cols.keys())]
+            filt_cols = [col for col in df.columns if col not in self.NOT_RELEV_COLS.keys()]
+            df = df[filt_cols]
 
         # merge rows about the same planet
-        df = self.aggregate_rows_on_pl_name(df)
+        df = self._aggregate_rows_on_pl_name(df)
 
         return df
