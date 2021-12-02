@@ -63,11 +63,11 @@ class SolarSys:
             earth_days = float(text.split()[0])/24.62
         return earth_days
 
-    def _clean_2pl_rade_deg(self, text):
+    def _clean_2pl_rad_deg(self, text):
         if type(text) is not float:
             return float(text[:-1].replace(',', '.'))
 
-    def _clean_pl_rade_assym(self, text):
+    def _clean_pl_rad_assym(self, text):
         """
         """
         text = text.replace('/', ' ').split()
@@ -91,20 +91,31 @@ class SolarSys:
         self.columns_raw = list(df.columns)
         self.columns_raw[0]="Nom de l'astre"
 
+        # ===
+        df.iloc[:,5] = df.iloc[:,5].apply(self._clean_pl_orbincl)
+        df.iloc[:,6] = df.iloc[:,6].apply(lambda s: float(s[:-1].replace(',', '.')) )
+        df.iloc[:,7] = df.iloc[:,7].apply(self._clean_pl_orbper)
+        df.iloc[:,8] = df.iloc[:,8].apply(self._clean_pl_rev)
+        df.iloc[:,9] = df.iloc[:,9].apply(self._clean_2pl_rad_deg)
+        df.iloc[:,10] = df.iloc[:,10].apply(lambda x: float(f"0.{str(x)}") if x!=1 else x)
+        df.iloc[:,11] = None
+        df.iloc[:,12] = df.iloc[:,12].apply(self._clean_pl_rad_assym)
+        df.iloc[:,13] = None
+        df.iloc[:,14] = df.iloc[:,14].apply(self._clean_pl_mass_sun)
+        df.iloc[:,15] = [0.055, 0.815, 1, 0.107, 317.83, 95.16, 14.54, 17.15, 0.0021]
+        df.iloc[:,16] = df.iloc[:,16].apply(lambda x: float(f"{str(x)[0]}.{str(x)[1:-5]}")*10**int(str(x)[-2:]))#/59736.1024
+        df.iloc[:,18] = df.iloc[:,18].apply(lambda x: float(f"0.{x}") if x!=1 else 1)
+        df.iloc[:,19] = None
+        df.iloc[:,20] = df.iloc[:,20].apply(lambda x: x/100 if x!=1 else 1)
+
         df.columns=[ 'pl_name', 'pl_mnum', 'pl_orbsmax', 'pl_orbsmax [km]',
         'pl_orbeccen', 'pl_orbincl', 'pl_orbincl [eq]', 'pl_orbper', 'pl_rev',
-        '2pl_rade [deg]', '2pl_rade', '2pl_rade [km]', 'pl_rade_assym', 'pl_vol [earth]', 'pl_masse [sun]', 'pl_masse', 'pl_mass [kg]',
+        '2pl_rad [deg]', 'pl_rade', '2pl_rad [km]', 'pl_rad_assym', 'pl_vol [earth]', 'pl_masse [sun]', 'pl_masse', 'pl_mass [kg]',
         'pl_masse + moon_mass', 'pl_dens [earth]', 'pl_dens [water]',
         'pl_grav', '2st_rad [apparent]', 'sy_mag [?]']
 
-        df['pl_orbincl'] = df['pl_orbincl'].apply(self._clean_pl_orbincl)
-        df['pl_orbincl [eq]'] = df['pl_orbincl [eq]'].apply(lambda s: float(s[:-1].replace(',', '.')) )
-        df['pl_orbper'] = df['pl_orbper'].apply(self._clean_pl_orbper)
-        df['pl_rev'] = df['pl_rev'].apply(self._clean_pl_rev)
-        df['2pl_rade [deg]'] = df['2pl_rade [deg]'].apply(self._clean_2pl_rade_deg)
-        df['2pl_rade [km]'] = df['2pl_rade [km]'].apply(lambda c : int(c.replace(' ', '')))
-        df['pl_rade_assym'] = df['pl_rade_assym'].apply(self._clean_pl_rade_assym)
-        df['pl_masse [sun]'] = df['pl_masse [sun]'].apply(self._clean_pl_mass_sun)
+        df['pl_masse'] = df.iloc[:,16]/df.iloc[2,16]
+        # ===
 
         df.loc[:3, 'Body'] = 'Terrestrial'
         df.iloc[4:-1, -1]  = 'Gas Giant'
