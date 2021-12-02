@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+from sklearn.impute import KNNImputer
+
 
 RAW_DATA_PATH = '../raw_data/nasa_PS_2021.11.23_14.10.10.csv'
 COLS_MAPPER_PATH = '../raw_data/nasa_Exoplanet_Archive_Column_Mapping.csv'
@@ -8,9 +10,8 @@ class Nasa:
 
     def __init__(self):
 
-        self.col_dict = self.load_readable_column_names()
+        self.col_dict = self._load_readable_column_names()
         self.coarse_relev_cols = self.get_coarse_relevant_columns()
-        # self.col_blocks = self.get_column_blocks()
 
         self.pl_name_index = None
         self.NOT_RELEV_COLS = {
@@ -121,7 +122,7 @@ class Nasa:
 
         return convert_table
 
-    def load_readable_column_names(self) -> dict:
+    def _load_readable_column_names(self) -> dict:
 
         """
         Gets readable column names from nase column mapping.
@@ -164,28 +165,6 @@ class Nasa:
 
         return blocks_list
 
-    def get_columns_from_blocks(self, block='Planetary Parameter Reference'):
-
-        """
-        Gets list of columns from a given block. Mostly used for filtering.
-        Blocks are:
-        - Planetary Parameter Reference
-        - Stellar Parameter Reference
-        - System Parameter Reference
-        - Planetary Parameter Reference Publication Date
-
-        """
-
-        # get db_col_names from blocks
-        corr_keys = []
-        for prop in self.col_blocks[block]:
-            for key,val in self.col_dict.items():
-                if prop == val:
-                    if key not in ['pl_orbtper_systemref'] and 'err' not in str(key) and 'lim' not in str(key):
-                        corr_keys.append(key)
-
-        return corr_keys
-
     def _aggregate_rows_on_pl_name(self, df):
 
         """
@@ -204,6 +183,20 @@ class Nasa:
             return x.unique()[0]
         else:
             return list(x.unique())
+
+    def _transform_dtype(self, df):
+
+        true_obj_cols = ['hostname','discoverymethod','st_metratio','decstr']
+        false_obj_cols = [
+            _ for _ in df.select_dtypes(include=object).columns.tolist()
+            if _ not in true_obj_cols
+        ]
+
+        for col in false_obj_cols:
+            # transform_dtype(df, col)
+            df[col] = df[col].apply(np.mean)
+
+        return df
 
     def load_clean_data(self, filt='coarse'):
 
@@ -226,5 +219,10 @@ class Nasa:
 
         # merge rows about the same planet
         df = self._aggregate_rows_on_pl_name(df)
+
+        # !!! for security reasons !!!
+        if filt == 'relevant':
+            # transform dtypes (false object like)
+            df = self._transform_dtype(df)
 
         return df
