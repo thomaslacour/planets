@@ -13,7 +13,7 @@ class Scrapper:
         self.data=None
 
 
-    def get_soup(self, url:str) -> bs4.BeautifulSoup:
+    def get_soup(self, url:str) -> BeautifulSoup:
         """Get soup from an url
         """
         resp = requests.get(url)
@@ -37,7 +37,7 @@ class TableScrapper(Scrapper):
             return pd.read_html(self.url)
         soup = self.get_soup(self.url)
         table = soup.find_all('table', {'class':self.table_class})
-        return pd.read_html(str(table))
+        return pd.read_html(str(table), flavor='bs4', thousands=' ', decimal=',')
 
 
 
