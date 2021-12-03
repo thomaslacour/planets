@@ -2,9 +2,13 @@ import pandas as pd
 import numpy as np
 from sklearn.impute import KNNImputer
 
+import nasa_exopl
+import wikipedia_pot_livable_pl
+
 
 RAW_DATA_PATH = '../raw_data/nasa_PS_2021.11.23_14.10.10.csv'
 COLS_MAPPER_PATH = '../raw_data/nasa_Exoplanet_Archive_Column_Mapping.csv'
+
 
 class Nasa:
 
@@ -224,5 +228,16 @@ class Nasa:
         if filt == 'relevant':
             # transform dtypes (false object like)
             df = self._transform_dtype(df)
+
+        # join/add planet types
+        df_pl_types = nasa_exopl.get_exopl_types()
+        df = df.join(df_pl_types)
+
+        # join/add planet livability
+        df_pl_pot_liv = wikipedia_pot_livable_pl.get_pot_livable_planets()
+        df = df.join(df_pl_pot_liv)
+
+        # # set False where planet is not livable
+        # filt = ['is_pot_livable']
 
         return df
