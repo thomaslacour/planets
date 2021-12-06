@@ -4,6 +4,8 @@ from sklearn.impute import KNNImputer
 
 import nasa_exopl
 import wikipedia_pot_livable_pl
+import stars_chz
+import planets_chz
 
 
 RAW_DATA_PATH = '../raw_data/nasa_PS_2021.11.23_14.10.10.csv'
@@ -87,7 +89,7 @@ class Nasa:
             'st_refname': 'Stellar Parameter Reference',
             'pl_projobliq': 'Projected Obliquity [deg]',
             'pl_trueobliq': 'True Obliquity [deg]',
-            'st_spectype': 'Spectral Type',
+            # 'st_spectype': 'Spectral Type',
             'st_vsin': 'Stellar Rotational Velocity [km/s]',
             'st_rotp': 'Stellar Rotational Period [days]',
             'st_radv': 'Systemic Radial Velocity [km/s]'
@@ -190,15 +192,23 @@ class Nasa:
 
     def _transform_dtype(self, df):
 
-        true_obj_cols = ['hostname','discoverymethod','st_metratio','decstr']
+        # list true/false object cols. false cols are transformed with numerical
+        # operations
+        # true_obj_cols = ['hostname','discoverymethod','st_metratio','decstr']
+        true_obj_cols = ['hostname','discoverymethod','st_metratio','decstr', 'st_spectype']
         false_obj_cols = [
             _ for _ in df.select_dtypes(include=object).columns.tolist()
             if _ not in true_obj_cols
         ]
 
+        # for numerical values, compute mean
         for col in false_obj_cols:
             # transform_dtype(df, col)
             df[col] = df[col].apply(np.mean)
+
+        # some true object cols need specific preprocessing
+        # st_spectype sometimes has more than 1 value. Needs aggregation;
+        df['st_spectype'] = df['st_spectype'].apply(lambda x: x[0] if isinstance(x, list) else x)
 
         return df
 
@@ -236,6 +246,22 @@ class Nasa:
         # join/add planet livability
         df_pl_pot_liv = wikipedia_pot_livable_pl.get_pot_livable_planets()
         df = df.join(df_pl_pot_liv)
+
+        # join/add star CHZ
+        # a st_class must be created to allow merging with table with star chz
+        df_st_chz = stars_chz.get_stars_chz()
+        df['st_class'] = df['st_spectype'].str[0:2]
+        # trick to avoid loosing index with merging
+        df.reset_index(inplace=True)
+        df = df.merge(df_st_chz, on='st_class', how='left')
+        df['pl_orb_is_in_CHZ'] = \
+            (df['pl_orbper'] >= df['st_chz_inn_edge (ls)']) \
+            & (df['pl_orbper'] <= df['st_chz_out_edge (ls)'])
+        df.set_index('pl_name', inplace=True)
+
+        # join/add planet CHZ
+        df_pl_chz = planets_chz.get_planets_chz()
+        df = df.join(df_pl_chz, how='left')
 
         # # set False where planet is not livable
         # filt = ['is_pot_livable']
