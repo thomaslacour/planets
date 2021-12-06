@@ -1,11 +1,17 @@
 import re
 import glob
 import pandas as pd
+import os
 
 
 
-def get_exopl_types():
+def get_exopl_types(rebuild=False):
 
+    # load .csv file if exists and immediately return
+    if os.path.exists('../raw_data/exopl_types.csv') and rebuild is False:
+        return pd.read_csv('../raw_data/exopl_types.csv').set_index('pl_name')
+
+    # else build or rebuild dataframe and .csv file
     rgx = re.compile(r'\d{4}\n\n  \*\s*([^<\*]+)\n    <')
 
     planet_type_dict = {}
@@ -98,5 +104,7 @@ def get_exopl_types():
     df['pl_name'] = df[['pl_name']].applymap(lambda x: re.sub('Kepler-90f','KOI-351 f', x))
 
     df.set_index('pl_name', inplace=True)
+
+    df.to_csv('../raw_data/exopl_types.csv')
 
     return df
