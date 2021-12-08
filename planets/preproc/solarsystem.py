@@ -115,11 +115,13 @@ class SolarSys:
         'pl_grav', '2st_rad [apparent]', 'sy_mag [?]']
 
         df['pl_masse'] = df.iloc[:,16]/df.iloc[2,16]
+        df['st_mass'] = 1
+        df['st_rad'] = 1
         # ===
 
-        df.loc[:3, 'Body'] = 'Terrestrial'
-        df.iloc[4:-1, -1]  = 'Gas Giant'
-        df.iloc[-1, -1]  = 'Dwarf'
+        df.loc[:3, 'pl_type'] = 'Terrestrial'.lower()
+        df.iloc[4:-1, -1]  = 'Gas Giant'.lower()
+        df.iloc[-1, -1]  = 'Dwarf'.lower()
 
         return df
 
