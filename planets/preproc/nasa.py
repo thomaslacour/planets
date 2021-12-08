@@ -2,14 +2,18 @@ import pandas as pd
 import numpy as np
 from sklearn.impute import KNNImputer
 
-import nasa_exopl
-import wikipedia_pot_livable_pl
-import stars_chz
-import planets_chz
+import planets.scrapper.nasa_exopl
+import planets.scrapper.wikipedia_pot_livable_pl
+import planets.preproc.stars_chz
+import planets.preproc.planets_chz
 
 
-RAW_DATA_PATH = '../raw_data/nasa_PS_2021.11.23_14.10.10.csv'
-COLS_MAPPER_PATH = '../raw_data/nasa_Exoplanet_Archive_Column_Mapping.csv'
+# RAW_DATA_PATH = '../raw_data/nasa_PS_2021.11.23_14.10.10.csv'
+# COLS_MAPPER_PATH = '../raw_data/nasa_Exoplanet_Archive_Column_Mapping.csv'
+import os
+
+RAW_DATA_PATH = '../../raw_data/nasa_PS_2021.11.23_14.10.10.csv'
+COLS_MAPPER_PATH = '../../raw_data/nasa_Exoplanet_Archive_Column_Mapping.csv'
 
 
 class Nasa:

@@ -68,7 +68,7 @@ class MassEffect:
         # handle thousand seperator
         text = text.replace(',', '').lower()
         # remove 'km'
-        return int(text[:-2])*6371
+        return int(text[:-2])/6371
 
 
     def _clean_day_length(self, text):
@@ -145,6 +145,7 @@ class MassEffect:
 
         columns_to_drop = []
 
+        df_clean['pl_name'] = df['pl_name']
         # keplerian ratio
         df_clean['Keplerian Ratio'] = df['Keplerian Ratio']
         # orbital distance
@@ -165,6 +166,9 @@ class MassEffect:
         df_clean['pl_masse'] = df['Mass'].apply(self._clean_mass)
         # number of satellites
         df_clean['Satellites'] = df['Satellites'].apply(self.clean_satellites)
+
+        df_clean['st_mass'] = df['pl_name'].apply(lambda x: np.nan)
+        df_clean['st_rad'] = df['pl_name'].apply(lambda x: np.nan)
 
         return df_clean
 
