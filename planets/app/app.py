@@ -1,3 +1,4 @@
+import planets
 import streamlit as st
 
 st.set_page_config(
@@ -19,7 +20,7 @@ dataviz = DataViz
 opt = {}
 
 empty = pd.DataFrame([[np.nan] * len(data.columns)], columns=data.columns)
-empty.pl_name = '--'
+empty.pl_name = ''
 data = empty.append(data, ignore_index=True)
 
 # selector
@@ -68,9 +69,11 @@ for i, (key, text) in enumerate(features.items()):
             input_default_value = np.round(selected_data[key][0], 2)
     features[key] += [ columns[i].text_input(input_label, value=input_default_value) ]
 
+# if stc.button('Find'):
+#     opt['neighbors'] = utils.predict()
+X = selected_data
 
-if stc.button('Find'):
-    opt['neighbors'] = utils.predict()
+opt['neighbors'] = utils.api_predict(X)
 
 opt['Livable'] = st.checkbox('Only Potentialy Livable Planets')
 
