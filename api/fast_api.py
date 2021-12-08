@@ -4,7 +4,7 @@ import pandas as pd
 
 import joblib
 
-from predict import _get_model_from_local, custom_predict
+from planets.pipeline.predict import _get_model_from_local, custom_predict
 
 app = FastAPI()
 

@@ -4,7 +4,9 @@ import numpy as np
 import json
 # from google.cloud import storage
 
-PATH_TO_LOCAL_MODEL = '../model.joblib'
+ROOT = '../planets/pipeline/'
+
+PATH_TO_LOCAL_MODEL = ROOT + 'model.joblib'
 AWS_BUCKET_TEST_PATH = ''
 GCOULD_BUCKET_NAME=''
 
@@ -33,9 +35,9 @@ def custom_predict(input_, n_neighs_shown=0, radius=0):
     model = _get_model_from_local()
 
     # temp loading index
-    X_train = joblib.load('../X_train.joblib')
-    X_index = joblib.load('../X_index.joblib')
-    dist_norm_fact = joblib.load('../dist_norm_fact.joblib')
+    X_train = joblib.load(ROOT + 'X_train.joblib')
+    X_index = joblib.load(ROOT + 'X_index.joblib')
+    dist_norm_fact = joblib.load(ROOT + 'dist_norm_fact.joblib')
 
     # stock prediction and predictions probabilities
     dict_prediction['prediction'] = model.predict(input_)[0]
