@@ -2,7 +2,10 @@ import joblib
 import pandas as pd
 import numpy as np
 import json
+import os
+from planets.pipeline import predict
 # from google.cloud import storage
+
 
 ROOT = '../planets/pipeline/'
 
@@ -62,8 +65,6 @@ def custom_predict(input_, n_neighs_shown=0, radius=0):
         norm_dist = dist/dist_norm_fact
 
         # filter on radius -- skip neighbor if dist > radius (defined by user)
-        print(radius, norm_dist)
-        print(type(radius), type(norm_dist))
         if radius !=0 and norm_dist > radius:
             continue
 
@@ -84,17 +85,93 @@ def custom_predict(input_, n_neighs_shown=0, radius=0):
         temp_dict['distance'] = dist
         temp_dict['norm_distance'] = norm_dist
 
-        if i == 0 and norm_dist > 1:
+        if i == 0 and norm_dist > 0.8:
             dict_prediction['pred_reliability'] = 'low'
-        elif i == 0 and norm_dist > 0.5 and norm_dist < 1:
+        elif i == 0 and norm_dist > 0.2:
             dict_prediction['pred_reliability'] = 'avg'
-        else:
+        elif i ==0 and norm_dist < 0.2:
             dict_prediction['pred_reliability'] = 'high'
 
         dict_prediction[f'neigh_{i}'] = temp_dict
         i += 1
 
     return dict_prediction
+
+
+def generate_random_planet(pl_type, sy_snum, sy_pnum, pl_orbper, pl_rade, pl_bmasse,
+    pl_orbeccen, pl_insol, pl_eqt, st_teff, st_rad, st_mass,
+    st_logg, reliability='avg', max_iter=1000, req_files_path=''):
+
+    """
+    Generates a random planet with given target, using knn trained model as
+    validator. Returns -1 if not planet can be found.
+    """
+
+    if pl_type not in ['gas giant', 'neptune-like', 'terrestrial', 'super earth']:
+        return -1
+
+    # load model from local
+    model = _get_model_from_local()
+
+    # gets intervals from inputed X_train
+    ipt_X_train = joblib.load(f'{req_files_path}ipt_X_train.joblib')
+
+    # gets intervals from inputed X_train
+    pl_type_frame = {}
+    for pl_type_ in ipt_X_train.pl_type.unique():
+        if pl_type_ != pl_type:
+            continue
+
+        col_intervals = {}
+        for col in ipt_X_train.columns:
+            if col == 'pl_type':
+                continue
+            filt = ipt_X_train.pl_type == pl_type_
+            col_intervals[col] = [ipt_X_train[filt][col].min(), ipt_X_train[filt][col].max()]
+
+        # returns a dict of dicts with pl_type as key, then features as key
+        pl_type_frame[pl_type] = col_intervals
+
+    # random iteration until coherent classification
+    i = 0
+    while True:
+        rand_pl_specs = {}
+        for key in pl_type_frame.get(pl_type).keys():
+
+            spec_frame = pl_type_frame.get(pl_type)
+
+            # if any feature has been given by user, keep it
+            if locals().get(key) is not None:
+                rand_pl_specs[key] = float(locals().get(key))
+
+            # else randomly generate the other features
+
+            # ints specific random generator
+            elif key in ['sy_snum', 'sy_pnum']:
+                rand_pl_specs[key] = np.random.randint(spec_frame.get(key)[0], spec_frame.get(key)[1])
+
+            # floats specific random generator
+            else:
+                if spec_frame.get(key)[0] == 0 and spec_frame.get(key)[1] < 1:
+                    rand_pl_specs[key] = np.random.random()
+                elif spec_frame.get(key)[0] == 0:
+                    rand_pl_specs[key] = np.random.randint(1, spec_frame.get(key)[1]) + np.random.random()
+                else:
+                    rand_pl_specs[key] = np.random.randint(spec_frame.get(key)[0], spec_frame.get(key)[1]) + np.random.random()
+
+        # test random planet classification
+        temp_prediction = custom_predict(pd.DataFrame([rand_pl_specs]))
+        if temp_prediction.get('prediction') == pl_type \
+            and temp_prediction.get('pred_reliability') == reliability:
+            return rand_pl_specs
+
+        # leave loop if maxi_iter is reached
+        if i == max_iter:
+            return -1
+        else:
+            i += 1
+
+    return rand_pl_specs
 
 
 
