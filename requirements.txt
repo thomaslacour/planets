@@ -35,3 +35,7 @@ html5lib
 
 # webapp
 streamlit
+
+# api
+fastapi
+uvicorn
