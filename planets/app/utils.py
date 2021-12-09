@@ -1,3 +1,5 @@
+import os
+
 import streamlit as st
 
 import requests
@@ -6,6 +8,7 @@ from planets.preproc.masseffect import MassEffect
 from planets.preproc.solarsystem import SolarSys
 from planets.preproc.nasa import Nasa
 from planets.pipeline.utils import ColumnTransformerWithNames
+
 
 import pandas as pd
 import numpy as np
@@ -34,10 +37,14 @@ class Load:
         ""
         ""
         masseffect = MassEffect()
-        file = '../../raw_data/masseffect.csv'
         masseffect.load_raw_data('../../raw_data/masseffect.csv')
-        data = masseffect.cleaned_data.dropna(subset=['pl_name'])
-        data.pl_name = data[ ['pl_name'] ].apply(lambda x: x + ' [MassEffect]')
+        masseffect = masseffect.cleaned_data.dropna(subset=['pl_name'])
+        masseffect.pl_name = masseffect[ ['pl_name'] ].apply(lambda x: x + ' [MassEffect]')
+
+        starwars = pd.read_csv('../../raw_data/kaggle_sw_planets_formatted.csv').iloc[:,1:]
+        starwars.pl_name = starwars[ ['pl_name'] ].apply(lambda x: x + ' [StarWars]')
+
+        data = pd.concat( (masseffect, starwars) )
 
         return data
 
@@ -87,7 +94,8 @@ class DataViz:
     # ·· we take the logarithm for the column whose values are on multiple
     #    order of magnitue
     cols_to_log=[
-        'pl_masse', 'pl_rade', 'st_rad', 'st_mass', 'pl_orbper', 'pl_orbsmax',
+        'pl_masse', 'pl_rade', 'st_rad', 'st_mass',
+        'pl_orbper', 'pl_orbsmax',
         'pl_radj', 'pl_bmassj', 'pl_dens', 'pl_insol', 'pl_trandep', 'pl_trandur',
         'pl_ratror', 'st_dens', 'sy_dist', 'st_lum_y', 'OHZIN', 'CHZIN', 'CHZOUT', 'OHZOUT'
     ]
@@ -95,7 +103,7 @@ class DataViz:
 
     # features selection
     cols_to_keep = cols_to_log
-    cols_to_keep += ['pl_eqt','sy_snum', 'sy_pnum', 'sy_mnum', 'st_age', 'st_logg', 'pl_tranmid' ]
+    # cols_to_keep += ['pl_eqt','sy_snum', 'sy_pnum', 'sy_mnum', 'st_age', 'st_logg', 'pl_tranmid' ]
 
     # masking for numerical data
     mask = ((raw.dtypes != 'object') & (raw.dtypes != 'bool')).to_numpy()
@@ -105,7 +113,7 @@ class DataViz:
     raw_num = raw[cols_to_keep]
 
     # preprocessing
-    Imputer    = [SimpleImputer(), KNNImputer()][0]
+    Imputer    = [SimpleImputer(strategy='median'), KNNImputer()][1]
     DataFramer = FunctionTransformer(lambda arr: pd.DataFrame(arr))
 
     imputer = make_column_transformer(
@@ -119,6 +127,7 @@ class DataViz:
     )
     pipeline_preproc = make_pipeline( Imputer, DataFramer , scaler)
 
+
     # pipeline_preproc = ColumnTransformerWithNames([
     #     ('a', Imputer, make_column_selector(dtype_exclude=['object','bool'])),
     #     ('b', DataFramer, make_column_selector(dtype_exclude=['bool'])),
@@ -127,16 +136,29 @@ class DataViz:
     # ], remainder='drop')
     # st.write(nasa.pipeline_preproc.get_feature_names())
 
-    X = pd.DataFrame(pipeline_preproc.fit_transform(raw_num))
+    nasa_filename = 'nasa_data_imputed_scaled.csv'
 
+    if not os.path.isfile(nasa_filename) or True:
+        X = pd.DataFrame(pipeline_preproc.fit_transform(raw_num))
+        X.to_csv(nasa_filename)
+
+    X = pd.read_csv(nasa_filename).iloc[:,1:]
 
     def make_figure(*args, **kwargs):
         """
         """
         X = DataViz.X
 
+        X_proj = X.copy()
+        X_proj.columns=DataViz.cols_to_keep
+
         # projected data on the principal components
-        X_proj, _ = make_pca(X)
+        if kwargs['use_pca']:
+            X_proj, _ = make_pca(X, n=2)
+            u, v = 0, 1
+        else:
+            u = DataViz.cols_to_keep.index(kwargs['x'])
+            v = DataViz.cols_to_keep.index(kwargs['y'])
 
         if len(args)!=0:
             mask_pl_name = DataViz.pl_name.isin(args)
@@ -160,8 +182,8 @@ class DataViz:
         px_style = { 'x':'x', 'y':'y', 'hover_name':'pl_name', 'hover_data':{'x':False, 'y':False} }
         planets_filt = lambda X, t, y: pd.DataFrame({
                 'pl_name' : DataViz.pl_name,
-                'x' : X.iloc[:,1][ y & pl_type_filt(t) ],
-                'y' : X.iloc[:,2][ y & pl_type_filt(t) ],
+                'x' : X.iloc[:,u][ y & pl_type_filt(t) ],
+                'y' : X.iloc[:,v][ y & pl_type_filt(t) ],
                 })
 
         # intialize scatter plot
@@ -244,12 +266,50 @@ def api_predict(X):
             val = round(X[feat].to_numpy()[0], 3)
         url += f"{feat}={val}&"
     url = url[:-1]
+    # st.write(url)
 
-    resp = requests.get(url).json()
+    resp = requests.get(url)
+    # st.write(resp)
+
+    resp = resp.json()
+    # st.write(resp)
 
     prediction    = resp.pop('prediction', '?').capitalize()
     probabilities = resp.pop('probabilities', [0, 0, 0, 0])
     reliability   = resp.pop('pred_reliability', 0)
     neighbors     = [ neighbor['pl_name'] for neighbor in resp.values() ]
 
-    return neighbors
+    return neighbors, (prediction, probabilities, reliability)
+
+
+def api_generate(pl_type=None):
+
+    if not pl_type:
+        return {
+            'pl_rade':     [''],
+            'pl_masse':    [''],
+            'pl_eqt':      [''],
+            'pl_orbper':   [''],
+            'st_mass':     [''],
+            'st_rad':      [''],
+            'st_teff':     [''],
+            'sy_pnum':     [''],
+            'pl_orbeccen': [''],
+            'pl_insol':    [''],
+            'sy_snum':     [''],
+            'st_logg':     [''], #  [log(cm/s²)]
+        }
+    return {
+        'pl_rade':     [0],
+        'pl_masse':    [0],
+        'pl_eqt':      [0],
+        'pl_orbper':   [0],
+        'st_mass':     [0],
+        'st_rad':      [0],
+        'st_teff':     [0],
+        'sy_pnum':     [0],
+        'pl_orbeccen': [0],
+        'pl_insol':    [0],
+        'sy_snum':     [0],
+        'st_logg':     [0], #  [log(cm/s²)]
+    }
