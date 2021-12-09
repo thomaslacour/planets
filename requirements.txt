@@ -121,7 +121,6 @@ pexpect==4.8.0
 pickleshare==0.7.5
 Pillow==8.4.0
 pkginfo==1.8.1
--e git+ssh://git@github.com/thomaslacour/planets.git@a4ce8176ddd26c49178d4415a8e0aadb920c5232#egg=planets
 platformdirs==2.4.0
 plotly==5.4.0
 pluggy==1.0.0
