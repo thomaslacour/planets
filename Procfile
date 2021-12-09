@@ -1,1 +1,1 @@
-web: sh setup.sh && cd api && uvicorn fast_api:app
+web: sh setup.sh && cd planets/app/ && streamlit run app.py
