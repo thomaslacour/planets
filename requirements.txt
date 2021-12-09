@@ -58,7 +58,6 @@ googleapis-common-protos==1.53.0
 greenlet==1.1.2
 gunicorn==20.1.0
 h11==0.12.0
-heroku==0.1.4
 html5lib==1.1
 idna==3.3
 importlib-metadata==4.8.2
