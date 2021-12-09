@@ -1,0 +1,62 @@
+,pl_name,pl_orbper,pl_rade,pl_type
+0,Alderaan,364.0,0.9810076911002982,terrestrial
+1,Yavin IV,4818.0,0.8005022759378434,terrestrial
+2,Hoth,549.0,0.5650604300737718,terrestrial
+3,Dagobah,341.0,0.6984774760634124,terrestrial
+4,Bespin,5110.0,9.260712603986816,giant gas
+5,Endor,402.0,0.3845550149113169,terrestrial
+6,Naboo,312.0,0.9511850572908491,terrestrial
+7,Coruscant,368.0,0.9606027311254121,terrestrial
+8,Kamino,463.0,1.5476377334798306,terrestrial
+9,Geonosis,256.0,0.8923245958248313,terrestrial
+10,Utapau,351.0,1.0123999372155077,terrestrial
+11,Mustafar,412.0,0.3296185842097002,terrestrial
+12,Kashyyyk,381.0,1.0018050541516246,terrestrial
+13,Polis Massa,590.0,0.0,terrestrial
+14,Mygeeto,167.0,0.7917124470255846,terrestrial
+15,Felucia,231.0,0.7141735991210171,terrestrial
+16,Cato Neimoidia,278.0,0.0,terrestrial
+17,Saleucami,392.0,1.1709307800973159,terrestrial
+18,Stewjon,,0.0,terrestrial
+19,Eriadu,360.0,1.058703500235442,terrestrial
+20,Corellia,329.0,0.8632867681682624,terrestrial
+21,Rodia,305.0,0.5924501648092921,terrestrial
+22,Nal Hutta,413.0,0.9535394757494898,terrestrial
+23,Dantooine,378.0,0.7714644482812745,terrestrial
+24,Bestine IV,680.0,0.5022759378433527,terrestrial
+25,Ord Mantell,334.0,1.1026526447967353,terrestrial
+26,,0.0,0.0,terrestrial
+27,Trandosha,371.0,0.0,terrestrial
+28,Socorro,326.0,0.0,terrestrial
+29,Mon Cala,398.0,0.8656411866269031,terrestrial
+30,Chandrila,368.0,1.059488306388322,terrestrial
+31,Sullust,263.0,1.0029822633809449,terrestrial
+32,Toydaria,184.0,0.6199968607753885,terrestrial
+33,Malastare,201.0,1.4817140166378904,terrestrial
+34,Dathomir,491.0,0.82247684821849,terrestrial
+35,Ryloth,305.0,0.8318945220530529,terrestrial
+36,Aleen Minor,,,terrestrial
+37,Vulpter,391.0,1.1693611677915554,terrestrial
+38,Troiken,,,terrestrial
+39,Tund,1770.0,0.9566787003610109,terrestrial
+40,Haruun Kal,383.0,0.7942238267148014,terrestrial
+41,Cerea,386.0,,terrestrial
+42,Glee Anselm,206.0,1.224297598493172,terrestrial
+43,Iridonia,413.0,,terrestrial
+44,Tholoth,,,terrestrial
+45,Iktotch,481.0,,terrestrial
+46,Quermia,,,terrestrial
+47,Dorin,409.0,1.0516402448595197,terrestrial
+48,Champala,318.0,,terrestrial
+49,Mirial,,,terrestrial
+50,Serenno,,,terrestrial
+51,Concord Dawn,,,terrestrial
+52,Zolan,,,terrestrial
+53,Ojom,,,terrestrial
+54,Skako,384.0,,terrestrial
+55,Muunilinst,412.0,1.0830324909747293,terrestrial
+56,Shili,,,terrestrial
+57,Kalee,378.0,1.0869565217391304,terrestrial
+58,Umbara,,,terrestrial
+59,Tatooine,304.0,0.8212996389891697,terrestrial
+60,Jakku,,,terrestrial
