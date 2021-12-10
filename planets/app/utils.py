@@ -243,7 +243,8 @@ class DataViz:
 
         fig.update_xaxes(title=xlabel, visible=True, showticklabels=False, showgrid=False, zeroline = False)
         fig.update_yaxes(title=ylabel, visible=True, showticklabels=False, showgrid=False, zeroline = False)
-        # fig.update_layout(title="Exoplanets collection from NASA", title_x=0.5)
+
+        fig.update_layout(title="Exoplanets collection from NASA 🟢 and your nearest candidate(s) 🟡", title_x=0.5)
 
         return fig
 
