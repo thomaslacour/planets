@@ -44,7 +44,7 @@ class Load:
         starwars = pd.read_csv('../../raw_data/kaggle_sw_planets_formatted.csv').iloc[:,1:]
         starwars.pl_name = starwars[ ['pl_name'] ].apply(lambda x: x + ' [StarWars]')
 
-        data = pd.concat( (masseffect, starwars) )
+        data = pd.concat( (masseffect, starwars) ).reset_index()
 
         return data
 
@@ -156,9 +156,13 @@ class DataViz:
         if kwargs['use_pca']:
             X_proj, _ = make_pca(X, n=2)
             u, v = 0, 1
+            xlabel = 'First principal component'
+            ylabel = 'Second principal component'
         else:
             u = DataViz.cols_to_keep.index(kwargs['x'])
             v = DataViz.cols_to_keep.index(kwargs['y'])
+            xlabel = col_dict[kwargs['x']]
+            ylabel = col_dict[kwargs['y']]
 
         if len(args)!=0:
             mask_pl_name = DataViz.pl_name.isin(args)
@@ -237,8 +241,9 @@ class DataViz:
         fig.add_trace(not_neighbors)
         fig.add_trace(neighbors)
 
-        fig.update_xaxes(title='', visible=False, showticklabels=False)
-        fig.update_yaxes(title='', visible=False, showticklabels=False)
+        fig.update_xaxes(title=xlabel, visible=True, showticklabels=False, showgrid=False, zeroline = False)
+        fig.update_yaxes(title=ylabel, visible=True, showticklabels=False, showgrid=False, zeroline = False)
+        # fig.update_layout(title="Exoplanets collection from NASA", title_x=0.5)
 
         return fig
 
@@ -247,10 +252,11 @@ class DataViz:
 # api fast api
 # uvicorn fast_api:app 127.0.0.800
 
-# TODO
-URL_API = 'http://127.0.0.1:8000'
+# URL_API = 'http://127.0.0.1:8000'
 # /predict?sy_snum=2&sy_pnum=2&pl_orbper=2&pl_rade=2&pl_bmasse=2&pl_orbeccen=2&pl_insol=2&pl_eqt=2&st_teff=2&st_rad=2&st_mass=2&st_logg=2&n_neighs_shown=0&radius=0
-def api_predict(X):
+URL_API = 'https://planetsuapi.herokuapp.com'
+
+def api_predict(X, **kwargs):
     """
     Get prediction from the api
     """
@@ -263,9 +269,18 @@ def api_predict(X):
     for feat in features:
         val = np.nan
         if feat in X.columns:
-            val = round(X[feat].to_numpy()[0], 3)
+            val = X[feat].to_numpy()[0]
+            if val:
+                val = round(val, 3)
+            else:
+                val = np.nan
         url += f"{feat}={val}&"
+    if 'n_neighs_shown' in kwargs.keys():
+        url += f"n_neighs_show={kwargs['n_neighs_shown']}&"
+    if 'radius' in kwargs.keys():
+        url += f"radius={kwargs['radius']}&"
     url = url[:-1]
+
     # st.write(url)
 
     resp = requests.get(url)
@@ -282,9 +297,12 @@ def api_predict(X):
     return neighbors, (prediction, probabilities, reliability)
 
 
-def api_generate(pl_type=None):
 
-    if not pl_type:
+def api_generate(*args, **kwargs):
+
+    # st.write(kwargs)
+
+    if not 'pl_type' in kwargs.keys():
         return {
             'pl_rade':     [''],
             'pl_masse':    [''],
@@ -299,17 +317,28 @@ def api_generate(pl_type=None):
             'sy_snum':     [''],
             'st_logg':     [''], #  [log(cm/s²)]
         }
-    return {
-        'pl_rade':     [0],
-        'pl_masse':    [0],
-        'pl_eqt':      [0],
-        'pl_orbper':   [0],
-        'st_mass':     [0],
-        'st_rad':      [0],
-        'st_teff':     [0],
-        'sy_pnum':     [0],
-        'pl_orbeccen': [0],
-        'pl_insol':    [0],
-        'sy_snum':     [0],
-        'st_logg':     [0], #  [log(cm/s²)]
-    }
+
+    URL_GENERATE_API = 'https://planetsuapi.herokuapp.com'
+    URL_GENERATE_API += '/generate?'
+    # URL_GENERATE_API += f'pl_type=gas%20giant&reliability=avg&max_iter=1000&sy_snum=null&sy_pnum=null&pl_orbper=null&pl_rade=null&pl_bmasse=null&pl_orbeccen=null&pl_insol=null&pl_eqt=null&st_teff=null&st_rad=null&st_mass=null&st_logg=null'
+
+    URL_GENERATE_API += f'pl_type={kwargs["pl_type"]}'
+    URL_GENERATE_API += f'&reliability=avg'
+    URL_GENERATE_API += f'&max_iter=1000'
+    URL_GENERATE_API += f'&sy_snum={kwargs["sy_snum"][0]}'
+    URL_GENERATE_API += f'&sy_pnum={kwargs["sy_pnum"][0]}'
+    URL_GENERATE_API += f'&pl_orbper={kwargs["pl_orbper"][0]}'
+    URL_GENERATE_API += f'&pl_rade={kwargs["pl_rade"][0]}'
+    URL_GENERATE_API += f'&pl_bmasse={kwargs["pl_masse"][0]}'
+    URL_GENERATE_API += f'&pl_orbeccen={kwargs["pl_orbeccen"][0]}'
+    URL_GENERATE_API += f'&pl_insol={kwargs["pl_insol"][0]}'
+    URL_GENERATE_API += f'&pl_eqt={kwargs["pl_eqt"][0]}'
+    URL_GENERATE_API += f'&st_teff={kwargs["st_teff"][0]}'
+    URL_GENERATE_API += f'&st_rad={kwargs["st_rad"][0]}'
+    URL_GENERATE_API += f'&st_mass={kwargs["st_mass"][0]}'
+    URL_GENERATE_API += f'&st_logg={kwargs["st_logg"][0]}'
+
+    resp = requests.get(URL_GENERATE_API)
+    resp = resp.json()
+
+    return resp
